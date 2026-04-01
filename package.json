@@ -1,0 +1,69 @@
+{
+  "name": "sable-desktop",
+  "productName": "Sable",
+  "version": "1.0.0",
+  "description": "An Electron based Desktop app for Sable",
+  "main": "src/main.js",
+  "author": "Finton <finton@finton.cc>",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "pack": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "^40.6.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "ing.combust.sable",
+    "productName": "Sable",
+    "directories": {
+      "output": "dist"
+    },
+    "extraResources": [
+      { "from": "src/assets/", "to": "." }
+    ],
+    "files": [
+      "src/**",
+      "package.json"
+    ],
+    "win": {
+      "icon": "src/assets/favicon.png",
+      "target": ["nsis", "portable"]
+    },
+    "mac": {
+      "icon": "src/assets/icon.png",
+      "target": ["dmg", "zip"],
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Sable needs camera access for video calls.",
+        "NSMicrophoneUsageDescription": "Sable needs microphone access for voice and video calls.",
+        "NSScreenCaptureUsageDescription": "Sable needs screen recording access to share your screen and system audio."
+      }
+    },
+    "linux": {
+      "icon": "src/assets/favicon.png",
+      "target": ["AppImage", "deb", "flatpak"],
+      "category": "Chat"
+    },
+    "flatpak": {
+      "base": "org.electronjs.Electron2.BaseApp",
+      "baseVersion": "24.08",
+      "runtime": "org.freedesktop.Platform",
+      "runtimeVersion": "24.08",
+      "sdk": "org.freedesktop.Sdk",
+      "finishArgs": [
+        "--socket=wayland",
+        "--socket=x11",
+        "--share=ipc",
+        "--device=dri",
+        "--device=all",
+        "--socket=pulseaudio",
+        "--share=network",
+        "--talk-name=org.freedesktop.Notifications"
+      ]
+    }
+  }
+}
