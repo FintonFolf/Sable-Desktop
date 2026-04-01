@@ -7,4 +7,6 @@ contextBridge.exposeInMainWorld('instancesAPI', {
     addInstance:       (instance) => ipcRenderer.invoke('add-instance', instance),
     removeInstance:    (url) => ipcRenderer.invoke('remove-instance', url),
     switchInstance:    (url) => ipcRenderer.invoke('switch-instance', url),
+    getSpellcheck:     () => ipcRenderer.invoke('get-spellcheck'),
+    setSpellcheck:     (enabled) => ipcRenderer.invoke('set-spellcheck', enabled),
 });

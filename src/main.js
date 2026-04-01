@@ -11,7 +11,7 @@ if (process.platform === 'linux') {
 let mainWindow;
 let tray = null;
 let pickerWindow = null;
-let switcherWindow = null;
+let preferencesWindow = null;
 let welcomeWindow = null;
 let pendingPickerCallback = null;
 let cachedSources = [];
@@ -35,13 +35,14 @@ function loadState() {
 }
 
 function saveState() {
-    fs.writeFileSync(getStatePath(), JSON.stringify({ instances, activeUrl }, null, 2));
+    fs.writeFileSync(getStatePath(), JSON.stringify({ instances, activeUrl, spellcheck }, null, 2));
 }
 
 const savedState = loadState();
 const isFirstRun = savedState === null;
 let instances = savedState?.instances ?? KNOWN_INSTANCES;
 let activeUrl = savedState?.activeUrl ?? KNOWN_INSTANCES[0].url;
+let spellcheck = savedState?.spellcheck ?? true;
 
 const getIconPath = () => app.isPackaged
     ? path.join(process.resourcesPath, 'favicon.png')
@@ -61,27 +62,27 @@ function isTrustedHost(url) {
     }
 }
 
-function openSwitcher() {
-    if (switcherWindow) {
-        switcherWindow.focus();
+function openPreferences() {
+    if (preferencesWindow) {
+        preferencesWindow.focus();
         return;
     }
-    switcherWindow = new BrowserWindow({
+    preferencesWindow = new BrowserWindow({
         width: 420,
         height: 480,
         parent: mainWindow,
         modal: false,
         resizable: false,
-        title: 'Switch Instance',
+        title: 'Preferences',
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            preload: r('preload/instances.js'),
+            preload: r('preload/preferences.js'),
         },
     });
-    switcherWindow.removeMenu();
-    switcherWindow.loadFile(r('renderer/instances.html'), { query: { mode: 'switcher' } });
-    switcherWindow.on('closed', () => { switcherWindow = null; });
+    preferencesWindow.removeMenu();
+    preferencesWindow.loadFile(r('renderer/preferences.html'), { query: { mode: 'preferences' } });
+    preferencesWindow.on('closed', () => { preferencesWindow = null; });
 }
 
 function openWelcomeWindow() {
@@ -93,11 +94,11 @@ function openWelcomeWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            preload: r('preload/instances.js'),
+            preload: r('preload/preferences.js'),
         },
     });
     welcomeWindow.removeMenu();
-    welcomeWindow.loadFile(r('renderer/instances.html'), { query: { mode: 'welcome' } });
+    welcomeWindow.loadFile(r('renderer/preferences.html'), { query: { mode: 'welcome' } });
     welcomeWindow.on('closed', () => {
         welcomeWindow = null;
         if (!mainWindow) app.quit();
@@ -194,7 +195,7 @@ if (!gotTheLock) {
             tray.setToolTip('Sable Client');
             tray.setContextMenu(Menu.buildFromTemplate([
                 { label: 'Open Sable',     click: () => { mainWindow.show(); mainWindow.focus(); } },
-                { label: 'Switch Instance', click: () => openSwitcher() },
+                { label: 'Preferences', click: () => openPreferences() },
                 { type: 'separator' },
                 { label: 'Quit',           click: () => { app.isQuitting = true; app.quit(); } },
             ]));
@@ -224,10 +225,18 @@ if (!gotTheLock) {
         activeUrl = url;
         saveState();
         mainWindow.loadURL(url);
-        if (switcherWindow) switcherWindow.close();
+        if (preferencesWindow) preferencesWindow.close();
     });
 
     ipcMain.handle('get-known-instances', () => KNOWN_INSTANCES);
+
+    ipcMain.handle('get-spellcheck', () => spellcheck);
+
+    ipcMain.handle('set-spellcheck', (_e, enabled) => {
+        spellcheck = enabled;
+        saveState();
+        if (mainWindow) mainWindow.webContents.session.setSpellCheckerEnabled(enabled);
+    });
 
     ipcMain.handle('select-instance', (_e, instance) => {
         if (!instances.find(i => i.url === instance.url)) instances.push(instance);
@@ -251,7 +260,7 @@ if (!gotTheLock) {
     });
 
     app.whenReady().then(async () => {
-        globalShortcut.register('CmdOrCtrl+Shift+S', openSwitcher);
+        globalShortcut.register('CmdOrCtrl+Shift+S', openPreferences);
 
         if (process.platform === 'darwin') {
             await systemPreferences.askForMediaAccess('camera');

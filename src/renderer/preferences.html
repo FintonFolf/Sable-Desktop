@@ -114,6 +114,36 @@
         .btn-continue:hover { background: #b2aae9; }
         .btn-continue:disabled { background: #333; color: #555; cursor: default; }
         .empty { text-align: center; padding: 40px 20px; color: #555; }
+        .settings-section {
+            border-top: 1px solid #404040;
+            padding: 12px 24px;
+            flex-shrink: 0;
+        }
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+        .setting-label { font-size: 13px; color: #f2f2f2; }
+        .toggle {
+            position: relative; width: 36px; height: 20px; flex-shrink: 0;
+        }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-track {
+            position: absolute; inset: 0;
+            background: #404040; border-radius: 10px;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .toggle input:checked + .toggle-track { background: #bdb6ec; }
+        .toggle-track::after {
+            content: ''; position: absolute;
+            left: 3px; top: 3px;
+            width: 14px; height: 14px;
+            background: #f2f2f2; border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .toggle input:checked + .toggle-track::after { transform: translateX(16px); }
     </style>
 </head>
 <body>
@@ -121,7 +151,18 @@
         <div class="title" id="title"></div>
         <div class="subtitle" id="subtitle"></div>
     </div>
-    <div class="section-label" id="sectionLabel" style="display:none">Select a server</div>
+    <div class="settings-section" id="settingsSection" style="display:none">
+        <div class="section-label" style="padding: 0 0 8px 0;">Settings</div>
+        <div class="setting-row">
+            <span class="setting-label">Spell Check</span>
+            <label class="toggle">
+                <input type="checkbox" id="spellcheckToggle" checked>
+                <div class="toggle-track"></div>
+            </label>
+        </div>
+    </div>
+
+    <div class="section-label" id="sectionLabel">Servers</div>
     <div class="list" id="list"><div class="empty">Loading…</div></div>
 
     <div class="add-form collapsed" id="addForm">
@@ -153,15 +194,15 @@
         }
 
         if (isWelcome) {
-            document.getElementById('title').textContent = 'Sable';
-            document.getElementById('subtitle').textContent = 'Choose a server to connect to.\nYou can switch servers at any time from the tray icon.';
-            document.getElementById('sectionLabel').style.display = '';
+            document.getElementById('title').textContent = 'Welcome to Sable';
+            document.getElementById('subtitle').textContent = 'Setup your preferences to get started.\nYou can edit your preferences at any time from the tray icon.';
+            document.getElementById('sectionLabel').textContent = 'Select a server';
             document.getElementById('footer').style.display = '';
             document.getElementById('toggleAdd').textContent = '+ Use a custom server';
             document.getElementById('confirmAdd').textContent = 'Use this server';
         } else {
-            document.getElementById('title').textContent = 'Switch Instance';
-            document.getElementById('subtitle').textContent = 'You can switch servers at any time from the tray icon.';
+            document.getElementById('title').textContent = 'Preferences';
+            document.getElementById('subtitle').textContent = 'You can edit your preferences at any time from the tray icon.';
             document.getElementById('toggleAdd').textContent = '+ Add Instance';
             document.getElementById('confirmAdd').textContent = 'Add';
         }
@@ -286,6 +327,16 @@
         });
 
         load();
+
+        if (!isWelcome) {
+            document.getElementById('settingsSection').style.display = '';
+            window.instancesAPI.getSpellcheck().then(enabled => {
+                document.getElementById('spellcheckToggle').checked = enabled;
+            });
+            document.getElementById('spellcheckToggle').addEventListener('change', (e) => {
+                window.instancesAPI.setSpellcheck(e.target.checked);
+            });
+        }
     </script>
 </body>
 </html>
