@@ -297,7 +297,7 @@ if (!gotTheLock) {
         session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
             if (process.platform === 'darwin') {
                 const status = systemPreferences.getMediaAccessStatus('screen');
-                if (status !== 'authorized') {
+                if (status === 'denied' || status === 'restricted') {
                     const { response } = await dialog.showMessageBox(mainWindow, {
                         type: 'warning',
                         title: 'Screen Recording Permission Required',
